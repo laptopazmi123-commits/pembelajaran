@@ -1,21 +1,26 @@
 // ============================================
-// DASHBOARD PROTECTION & USER INFO
+// MAIN - Dashboard Helper
 // ============================================
+
+// Re-check auth setiap load dashboard
 document.addEventListener('DOMContentLoaded', () => {
-  const currentUser = JSON.parse(localStorage.getItem('zc_current_user') || 'null');
-  const isDashboard = window.location.pathname.includes('dashboard');
+  if (window.location.pathname.includes('dashboard')) {
+    // Delay sampai supabase ready
+    const check = setInterval(() => {
+      if (window.supabaseClient) {
+        clearInterval(check);
+        // Jika auth.js belum handle, ini fallback
+        if (typeof checkDashboardAuth === 'function') {
+          // sudah di-handle auth.js
+        }
+      }
+    }, 300);
 
-  // Proteksi halaman dashboard
-  if (isDashboard && !currentUser) {
-    window.location.href = 'login.html';
-    return;
-  }
-
-  // Tampilkan nama user
-  if (currentUser && isDashboard) {
-    const nameEl = document.getElementById('welcomeName');
-    const userEl = document.getElementById('userName');
-    if (nameEl) nameEl.textContent = currentUser.name || 'Siswa';
-    if (userEl) userEl.textContent = `👤 ${currentUser.name || currentUser.email}`;
+    // Timeout 5 detik - kalau tidak ready, redirect
+    setTimeout(() => {
+      if (!window.supabaseClient) {
+        console.error('Supabase tidak ter-load. Cek js/supabase-config.js');
+      }
+    }, 5000);
   }
 });
