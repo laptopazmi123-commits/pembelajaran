@@ -1,12 +1,14 @@
 # ZimzzCode - Platform Belajar Coding Gratis
 
-## 🚀 Cara Menjalankan (Lokal)
+## 🔑 Setup (WAJIB Sebelum Jalan)
 
-1. Simpan semua file sesuai struktur folder di atas.
-2. Buka folder di VS Code.
-3. Jalankan **Live Server** (klik kanan `index.html` → Open with Live Server)
-   ATAU jalankan di terminal:
-   ```bash
-   npx serve .
-   # atau
-   python -m http.server 5500
+### 1. Buat Project Supabase (Gratis)
+1. Buka https://supabase.com → Sign up
+2. New Project → isi nama, password, region (Singapore)
+3. Tunggu ~2 menit
+4. Settings → API → copy **Project URL** & **anon public key**
+
+### 2. Edit `js/supabase-config.js`
+```js
+const SUPABASE_URL = 'https://xxxxx.supabase.co';        // paste Project URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIs...';    // paste anon key
