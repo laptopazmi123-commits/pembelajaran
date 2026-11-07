@@ -1,16 +1,17 @@
 // ============================================
 // AUTH LOGIC - Supabase
+// Menggunakan window.supabaseClient (dari supabase-config.js)
 // ============================================
-let supabase = null;
+let sb = null;
 
 window.addEventListener('supabase-ready', () => {
-  supabase = window.supabaseClient;
+  sb = window.supabaseClient;
   initAuth();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   if (window.supabaseClient) {
-    supabase = window.supabaseClient;
+    sb = window.supabaseClient;
     initAuth();
   }
 });
@@ -51,7 +52,7 @@ function switchTab(tab) {
 
 async function handleRegister(e) {
   e.preventDefault();
-  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+  if (!sb) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
 
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -63,7 +64,7 @@ async function handleRegister(e) {
 
   showMessage('⏳ Mendaftar...', 'success');
 
-  const { error } = await supabase.auth.signUp({
+  const { error } = await sb.auth.signUp({
     email, password,
     options: { data: { full_name: name } }
   });
@@ -79,14 +80,14 @@ async function handleRegister(e) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+  if (!sb) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
 
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
 
   showMessage('⏳ Masuk...', 'success');
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) return showMessage('❌ ' + error.message, 'error');
 
   showMessage('✅ Login berhasil! Mengalihkan...', 'success');
@@ -94,9 +95,9 @@ async function handleLogin(e) {
 }
 
 async function loginWithGoogle() {
-  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+  if (!sb) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
 
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin + '/dashboard.html',
@@ -108,9 +109,9 @@ async function loginWithGoogle() {
 }
 
 async function loginWithGitHub() {
-  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+  if (!sb) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
 
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { error } = await sb.auth.signInWithOAuth({
     provider: 'github',
     options: { redirectTo: window.location.origin + '/dashboard.html' }
   });
@@ -126,15 +127,15 @@ function showMessage(msg, type) {
 }
 
 async function logout() {
-  if (supabase) await supabase.auth.signOut();
+  if (sb) await sb.auth.signOut();
   localStorage.removeItem('zc_current_user');
   window.location.href = 'index.html';
 }
 
 async function checkDashboardAuth() {
-  if (!supabase) return setTimeout(checkDashboardAuth, 500);
+  if (!sb) return setTimeout(checkDashboardAuth, 500);
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
 
   const user = session.user;
