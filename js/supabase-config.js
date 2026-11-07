@@ -1,9 +1,8 @@
 // ============================================
 // KONFIGURASI SUPABASE
-// GANTI DENGAN MILIKMU DARI SETTINGS > API
 // ============================================
-const SUPABASE_URL = 'https://xxxxx.supabase.co';        // GANTI
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....'; // GANTI
+const SUPABASE_URL = 'https://rltrzuqtcndnljwdvnuj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_aPcSz5LgNmLr5ZK2zzCRYQ_VicKSb4p';
 
 // Load Supabase dari CDN
 const supabaseScript = document.createElement('script');
