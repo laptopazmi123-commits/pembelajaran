@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kursus HTML - ZimzzCode</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">💻 Zimzz<span>Code</span></div>
+    <div class="nav-links">
+      <a href="dashboard.html" class="btn-login">← Dashboard</a>
+      <span id="userName" class="user-name"></span>
+    </div>
+  </nav>
+
+  <div class="lesson-layout">
+    <!-- Sidebar daftar materi -->
+    <aside class="lesson-sidebar">
+      <h3>📚 Materi HTML</h3>
+      <ul id="lessonList"></ul>
+      <div class="progress-box">
+        <p>Progress: <strong id="progressText">0/5</strong></p>
+        <div class="progress-bar-small">
+          <div id="progressFill" class="progress-fill-small" style="width:0%"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Konten materi -->
+    <main class="lesson-content">
+      <div id="lessonContent">
+        <p>Pilih materi di sebelah kiri untuk mulai belajar.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/kursus-html.js"></script>
+</body>
+</html>
