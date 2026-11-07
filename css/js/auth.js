@@ -167,4 +167,62 @@ function loginWithGitHub() {
   const { clientId, redirectUri, scope, authUrl } = CONFIG.github;
 
   if (clientId.includes('YOUR_')) {
-    return showMessage('⚠️ GitHub Client ID belum diisi. Lihat
+    return showMessage('⚠️ GitHub Client ID belum diisi. Lihat README.md', 'error');
+  }
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope: scope
+  });
+
+  window.location.href = `${authUrl}?${params}`;
+}
+
+// ============================================
+// SHOW MESSAGE
+// ============================================
+function showMessage(msg, type) {
+  const el = document.getElementById('authMessage');
+  if (!el) { alert(msg); return; }
+  el.textContent = msg;
+  el.className = `auth-message ${type}`;
+}
+
+// ============================================
+// LOGOUT
+// ============================================
+function logout() {
+  localStorage.removeItem('zc_current_user');
+  window.location.href = 'index.html';
+}
+
+// ============================================
+// HANDLE OAUTH CALLBACK (Google)
+// ============================================
+async function handleOAuthCallback() {
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  const accessToken = params.get('access_token');
+
+  if (accessToken) {
+    try {
+      const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const user = await res.json();
+
+      localStorage.setItem('zc_current_user', JSON.stringify({
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        provider: 'google'
+      }));
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      location.reload();
+    } catch (err) {
+      console.error('Gagal ambil data Google:', err);
+    }
+  }
+}
