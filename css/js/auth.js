@@ -1,51 +1,42 @@
 // ============================================
-// KONFIGURASI OAUTH
-// Ganti dengan Client ID milikmu (lihat README)
+// AUTH LOGIC - Supabase
 // ============================================
-const CONFIG = {
-  google: {
-    clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-    redirectUri: window.location.origin + '/dashboard.html',
-    scope: 'openid email profile',
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth'
-  },
-  github: {
-    clientId: 'YOUR_GITHUB_CLIENT_ID',
-    redirectUri: window.location.origin + '/dashboard.html',
-    scope: 'read:user user:email',
-    authUrl: 'https://github.com/login/oauth/authorize'
-  }
-};
 
-// ============================================
-// INIT: JALANKAN SETELAH DOM SIAP
-// ============================================
-document.addEventListener('DOMContentLoaded', () => {
-  const isAuthPage = document.getElementById('loginForm') || document.getElementById('registerForm');
-  if (isAuthPage) initAuthPage();
-  if (window.location.pathname.includes('dashboard')) handleOAuthCallback();
+let supabase = null;
+
+// Tunggu Supabase siap
+window.addEventListener('supabase-ready', () => {
+  supabase = window.supabaseClient;
+  initAuth();
 });
 
-function initAuthPage() {
-  // Auto-tab register dari hash URL
-  if (window.location.hash === '#register') switchTab('register');
-
-  // Handler register
-  const registerForm = document.getElementById('registerForm');
-  if (registerForm) {
-    registerForm.addEventListener('submit', handleRegister);
+// Fallback jika supabase-config sudah load duluan
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.supabaseClient) {
+    supabase = window.supabaseClient;
+    initAuth();
   }
+});
 
-  // Handler login
-  const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
+function initAuth() {
+  const isAuthPage = document.getElementById('loginForm') || document.getElementById('registerForm');
+  if (isAuthPage) initAuthPage();
+  if (window.location.pathname.includes('dashboard')) checkDashboardAuth();
 }
 
 // ============================================
-// TAB SWITCHING
+// AUTH PAGE
 // ============================================
+function initAuthPage() {
+  if (window.location.hash === '#register') switchTab('register');
+
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) registerForm.addEventListener('submit', handleRegister);
+
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
+}
+
 function switchTab(tab) {
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
@@ -64,19 +55,17 @@ function switchTab(tab) {
     if (tabs[1]) tabs[1].classList.add('active');
   }
 
-  // Reset pesan
   const msg = document.getElementById('authMessage');
-  if (msg) {
-    msg.textContent = '';
-    msg.className = 'auth-message';
-  }
+  if (msg) { msg.textContent = ''; msg.className = 'auth-message'; }
 }
 
 // ============================================
-// HANDLER REGISTER
+// REGISTER (Email/Password)
 // ============================================
-function handleRegister(e) {
+async function handleRegister(e) {
   e.preventDefault();
+
+  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
 
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -86,24 +75,19 @@ function handleRegister(e) {
   if (!email.includes('@')) return showMessage('Email tidak valid!', 'error');
   if (password.length < 6) return showMessage('Password minimal 6 karakter!', 'error');
 
-  // Simpan ke localStorage (untuk demo)
-  const users = JSON.parse(localStorage.getItem('zc_users') || '[]');
+  showMessage('⏳ Mendaftar...', 'success');
 
-  if (users.find(u => u.email === email)) {
-    return showMessage('Email sudah terdaftar!', 'error');
-  }
-
-  users.push({
-    name,
+  const { data, error } = await supabase.auth.signUp({
     email,
-    password: btoa(password), // base64 (BUKAN untuk production)
-    createdAt: Date.now()
+    password,
+    options: { data: { full_name: name } }
   });
 
-  localStorage.setItem('zc_users', JSON.stringify(users));
+  if (error) {
+    return showMessage('❌ ' + error.message, 'error');
+  }
 
   showMessage('✅ Pendaftaran berhasil! Silakan masuk.', 'success');
-
   setTimeout(() => {
     document.getElementById('registerForm').reset();
     switchTab('login');
@@ -111,118 +95,9 @@ function handleRegister(e) {
 }
 
 // ============================================
-// HANDLER LOGIN
+// LOGIN (Email/Password)
 // ============================================
-function handleLogin(e) {
+async function handleLogin(e) {
   e.preventDefault();
 
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-
-  const users = JSON.parse(localStorage.getItem('zc_users') || '[]');
-  const user = users.find(u => u.email === email && u.password === btoa(password));
-
-  if (!user) {
-    return showMessage('❌ Email atau password salah!', 'error');
-  }
-
-  localStorage.setItem('zc_current_user', JSON.stringify({
-    name: user.name,
-    email: user.email,
-    provider: 'email'
-  }));
-
-  showMessage('✅ Login berhasil! Mengalihkan...', 'success');
-
-  setTimeout(() => {
-    window.location.href = 'dashboard.html';
-  }, 800);
-}
-
-// ============================================
-// OAUTH: GOOGLE (GMAIL)
-// ============================================
-function loginWithGoogle() {
-  const { clientId, redirectUri, scope, authUrl } = CONFIG.google;
-
-  if (clientId.includes('YOUR_')) {
-    return showMessage('⚠️ Google Client ID belum diisi. Lihat README.md', 'error');
-  }
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'token',
-    scope: scope,
-    include_granted_scopes: 'true'
-  });
-
-  window.location.href = `${authUrl}?${params}`;
-}
-
-// ============================================
-// OAUTH: GITHUB
-// ============================================
-function loginWithGitHub() {
-  const { clientId, redirectUri, scope, authUrl } = CONFIG.github;
-
-  if (clientId.includes('YOUR_')) {
-    return showMessage('⚠️ GitHub Client ID belum diisi. Lihat README.md', 'error');
-  }
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    scope: scope
-  });
-
-  window.location.href = `${authUrl}?${params}`;
-}
-
-// ============================================
-// SHOW MESSAGE
-// ============================================
-function showMessage(msg, type) {
-  const el = document.getElementById('authMessage');
-  if (!el) { alert(msg); return; }
-  el.textContent = msg;
-  el.className = `auth-message ${type}`;
-}
-
-// ============================================
-// LOGOUT
-// ============================================
-function logout() {
-  localStorage.removeItem('zc_current_user');
-  window.location.href = 'index.html';
-}
-
-// ============================================
-// HANDLE OAUTH CALLBACK (Google)
-// ============================================
-async function handleOAuthCallback() {
-  const hash = window.location.hash.substring(1);
-  const params = new URLSearchParams(hash);
-  const accessToken = params.get('access_token');
-
-  if (accessToken) {
-    try {
-      const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      const user = await res.json();
-
-      localStorage.setItem('zc_current_user', JSON.stringify({
-        name: user.name,
-        email: user.email,
-        picture: user.picture,
-        provider: 'google'
-      }));
-
-      window.history.replaceState({}, document.title, window.location.pathname);
-      location.reload();
-    } catch (err) {
-      console.error('Gagal ambil data Google:', err);
-    }
-  }
-}
+  if (!supabase
