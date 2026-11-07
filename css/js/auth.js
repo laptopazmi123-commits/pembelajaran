@@ -100,4 +100,103 @@ async function handleRegister(e) {
 async function handleLogin(e) {
   e.preventDefault();
 
-  if (!supabase
+  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  showMessage('⏳ Masuk...', 'success');
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return showMessage('❌ ' + error.message, 'error');
+  }
+
+  showMessage('✅ Login berhasil! Mengalihkan...', 'success');
+  setTimeout(() => window.location.href = 'dashboard.html', 500);
+}
+
+// ============================================
+// LOGIN GOOGLE
+// ============================================
+async function loginWithGoogle() {
+  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/dashboard.html'
+    }
+  });
+
+  if (error) {
+    showMessage('❌ ' + error.message, 'error');
+  }
+}
+
+// ============================================
+// LOGIN GITHUB
+// ============================================
+async function loginWithGitHub() {
+  if (!supabase) return showMessage('⏳ Memuat... coba lagi sebentar', 'error');
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'github',
+    options: {
+      redirectTo: window.location.origin + '/dashboard.html'
+    }
+  });
+
+  if (error) {
+    showMessage('❌ ' + error.message, 'error');
+  }
+}
+
+// ============================================
+// SHOW MESSAGE
+// ============================================
+function showMessage(msg, type) {
+  const el = document.getElementById('authMessage');
+  if (!el) { alert(msg); return; }
+  el.textContent = msg;
+  el.className = `auth-message ${type}`;
+}
+
+// ============================================
+// LOGOUT
+// ============================================
+async function logout() {
+  if (supabase) await supabase.auth.signOut();
+  localStorage.removeItem('zc_current_user');
+  window.location.href = 'index.html';
+}
+
+// ============================================
+// DASHBOARD AUTH CHECK
+// ============================================
+async function checkDashboardAuth() {
+  if (!supabase) {
+    // Coba lagi setelah 500ms
+    return setTimeout(checkDashboardAuth, 500);
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const user = session.user;
+  const name = user.user_metadata?.full_name
+    || user.user_metadata?.name
+    || user.user_metadata?.user_name
+    || user.email?.split('@')[0]
+    || 'Siswa';
+
+  const nameEl = document.getElementById('welcomeName');
+  const userEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = name;
+  if (userEl) userEl.textContent = `👤 ${name}`;
+}
