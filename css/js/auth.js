@@ -1,6 +1,6 @@
 // ============================================
 // KONFIGURASI OAUTH
-// GANTI DENGAN CLIENT ID MILIKMU
+// Ganti dengan Client ID milikmu (lihat README)
 // ============================================
 const CONFIG = {
   google: {
@@ -18,81 +18,137 @@ const CONFIG = {
 };
 
 // ============================================
+// INIT: JALANKAN SETELAH DOM SIAP
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  const isAuthPage = document.getElementById('loginForm') || document.getElementById('registerForm');
+  if (isAuthPage) initAuthPage();
+  if (window.location.pathname.includes('dashboard')) handleOAuthCallback();
+});
+
+function initAuthPage() {
+  // Auto-tab register dari hash URL
+  if (window.location.hash === '#register') switchTab('register');
+
+  // Handler register
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) {
+    registerForm.addEventListener('submit', handleRegister);
+  }
+
+  // Handler login
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  }
+}
+
+// ============================================
 // TAB SWITCHING
 // ============================================
 function switchTab(tab) {
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
   const tabs = document.querySelectorAll('.tab');
-  
+  if (!loginForm || !registerForm) return;
+
   tabs.forEach(t => t.classList.remove('active'));
+
   if (tab === 'login') {
     loginForm.classList.remove('hidden');
     registerForm.classList.add('hidden');
-    tabs[0].classList.add('active');
+    if (tabs[0]) tabs[0].classList.add('active');
   } else {
     loginForm.classList.add('hidden');
     registerForm.classList.remove('hidden');
-    tabs[1].classList.add('active');
+    if (tabs[1]) tabs[1].classList.add('active');
+  }
+
+  // Reset pesan
+  const msg = document.getElementById('authMessage');
+  if (msg) {
+    msg.textContent = '';
+    msg.className = 'auth-message';
   }
 }
 
-// Cek hash URL untuk auto-tab register
-if (window.location.hash === '#register') switchTab('register');
-
 // ============================================
-// REGISTER DENGAN EMAIL
+// HANDLER REGISTER
 // ============================================
-document.getElementById('registerForm')?.addEventListener('submit', (e) => {
+function handleRegister(e) {
   e.preventDefault();
+
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
 
-  if (!email.endsWith('@gmail.com') && !email.includes('@')) {
-    return showMessage('Gunakan email yang valid', 'error');
-  }
+  if (!name) return showMessage('Nama wajib diisi!', 'error');
+  if (!email.includes('@')) return showMessage('Email tidak valid!', 'error');
+  if (password.length < 6) return showMessage('Password minimal 6 karakter!', 'error');
 
   // Simpan ke localStorage (untuk demo)
-  // PRODUCTION: gunakan Firebase Auth / backend
   const users = JSON.parse(localStorage.getItem('zc_users') || '[]');
+
   if (users.find(u => u.email === email)) {
     return showMessage('Email sudah terdaftar!', 'error');
   }
 
-  users.push({ name, email, password: btoa(password), createdAt: Date.now() });
+  users.push({
+    name,
+    email,
+    password: btoa(password), // base64 (BUKAN untuk production)
+    createdAt: Date.now()
+  });
+
   localStorage.setItem('zc_users', JSON.stringify(users));
-  
+
   showMessage('✅ Pendaftaran berhasil! Silakan masuk.', 'success');
-  setTimeout(() => switchTab('login'), 1500);
-});
+
+  setTimeout(() => {
+    document.getElementById('registerForm').reset();
+    switchTab('login');
+  }, 1500);
+}
 
 // ============================================
-// LOGIN DENGAN EMAIL
+// HANDLER LOGIN
 // ============================================
-document.getElementById('loginForm')?.addEventListener('submit', (e) => {
+function handleLogin(e) {
   e.preventDefault();
+
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
 
   const users = JSON.parse(localStorage.getItem('zc_users') || '[]');
   const user = users.find(u => u.email === email && u.password === btoa(password));
 
-  if (!user) return showMessage('❌ Email atau password salah!', 'error');
+  if (!user) {
+    return showMessage('❌ Email atau password salah!', 'error');
+  }
 
-  localStorage.setItem('zc_current_user', JSON.stringify({ name: user.name, email: user.email, provider: 'email' }));
+  localStorage.setItem('zc_current_user', JSON.stringify({
+    name: user.name,
+    email: user.email,
+    provider: 'email'
+  }));
+
   showMessage('✅ Login berhasil! Mengalihkan...', 'success');
-  setTimeout(() => window.location.href = 'dashboard.html', 800);
-});
+
+  setTimeout(() => {
+    window.location.href = 'dashboard.html';
+  }, 800);
+}
 
 // ============================================
-// LOGIN DENGAN GOOGLE (OAuth 2.0)
+// OAUTH: GOOGLE (GMAIL)
 // ============================================
 function loginWithGoogle() {
   const { clientId, redirectUri, scope, authUrl } = CONFIG.google;
+
   if (clientId.includes('YOUR_')) {
-    return showMessage('⚠️ Konfigurasi Google Client ID belum diisi. Lihat README.md', 'error');
+    return showMessage('⚠️ Google Client ID belum diisi. Lihat README.md', 'error');
   }
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -100,71 +156,15 @@ function loginWithGoogle() {
     scope: scope,
     include_granted_scopes: 'true'
   });
+
   window.location.href = `${authUrl}?${params}`;
 }
 
 // ============================================
-// LOGIN DENGAN GITHUB (OAuth 2.0)
+// OAUTH: GITHUB
 // ============================================
 function loginWithGitHub() {
   const { clientId, redirectUri, scope, authUrl } = CONFIG.github;
+
   if (clientId.includes('YOUR_')) {
-    return showMessage('⚠️ Konfigurasi GitHub Client ID belum diisi. Lihat README.md', 'error');
-  }
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    scope: scope
-  });
-  window.location.href = `${authUrl}?${params}`;
-}
-
-// ============================================
-// UTILITAS
-// ============================================
-function showMessage(msg, type) {
-  const el = document.getElementById('authMessage');
-  if (!el) return alert(msg);
-  el.textContent = msg;
-  el.className = `auth-message ${type}`;
-}
-
-function logout() {
-  localStorage.removeItem('zc_current_user');
-  window.location.href = 'index.html';
-}
-
-// ============================================
-// HANDLE OAUTH CALLBACK (di dashboard)
-// ============================================
-async function handleOAuthCallback() {
-  const hash = window.location.hash.substring(1);
-  const params = new URLSearchParams(hash);
-  const accessToken = params.get('access_token');
-  const code = params.get('code');
-
-  // Google: token di hash
-  if (accessToken && window.location.pathname.includes('dashboard')) {
-    try {
-      const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      const user = await res.json();
-      localStorage.setItem('zc_current_user', JSON.stringify({
-        name: user.name, email: user.email, picture: user.picture, provider: 'google'
-      }));
-      window.history.replaceState({}, document.title, window.location.pathname);
-      location.reload();
-    } catch (err) {
-      console.error('Gagal ambil data Google:', err);
-    }
-  }
-
-  // GitHub: token didapat via backend exchange (code flow)
-  // Untuk demo, kita tidak handle code exchange di frontend (butuh client_secret)
-  if (code && window.location.pathname.includes('dashboard')) {
-    console.warn('GitHub OAuth code diterima. Perlu backend untuk exchange token.');
-  }
-}
-
-handleOAuthCallback();
+    return showMessage('⚠️ GitHub Client ID belum diisi. Lihat
