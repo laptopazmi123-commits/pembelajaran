@@ -1,13 +1,21 @@
-// Proteksi halaman dashboard
-const currentUser = JSON.parse(localStorage.getItem('zc_current_user') || 'null');
+// ============================================
+// DASHBOARD PROTECTION & USER INFO
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  const currentUser = JSON.parse(localStorage.getItem('zc_current_user') || 'null');
+  const isDashboard = window.location.pathname.includes('dashboard');
 
-if (!currentUser && window.location.pathname.includes('dashboard')) {
-  window.location.href = 'login.html';
-}
+  // Proteksi halaman dashboard
+  if (isDashboard && !currentUser) {
+    window.location.href = 'login.html';
+    return;
+  }
 
-if (currentUser) {
-  const nameEl = document.getElementById('welcomeName');
-  const userEl = document.getElementById('userName');
-  if (nameEl) nameEl.textContent = currentUser.name || 'Siswa';
-  if (userEl) userEl.textContent = `👤 ${currentUser.name || currentUser.email}`;
-}
+  // Tampilkan nama user
+  if (currentUser && isDashboard) {
+    const nameEl = document.getElementById('welcomeName');
+    const userEl = document.getElementById('userName');
+    if (nameEl) nameEl.textContent = currentUser.name || 'Siswa';
+    if (userEl) userEl.textContent = `👤 ${currentUser.name || currentUser.email}`;
+  }
+});
