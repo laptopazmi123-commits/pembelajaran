@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kursus HTML - ZimzzCode</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/kursus.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -12,24 +13,35 @@
     <div class="logo">💻 Zimzz<span>Code</span></div>
     <div class="nav-links">
       <a href="dashboard.html" class="btn-login">← Dashboard</a>
+      <div class="mode-buttons">
+        <button type="button" class="mode-btn" id="themeBtn" onclick="toggleTheme()" title="Mode Gelap/Terang">🌙</button>
+        <button type="button" class="mode-btn" id="focusBtn" onclick="toggleFocus()" title="Mode Fokus">⛶</button>
+      </div>
       <span id="userName" class="user-name"></span>
     </div>
   </nav>
 
   <div class="lesson-layout">
-    <!-- Sidebar daftar materi -->
     <aside class="lesson-sidebar">
-      <h3>📚 Materi HTML</h3>
+      <div class="sidebar-header">
+        <h3>📚 Materi HTML</h3>
+        <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
+          <option value="id">🇮🇩 Indonesia</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="ko">🇰🇷 한국어</option>
+        </select>
+      </div>
       <ul id="lessonList"></ul>
       <div class="progress-box">
-        <p>Progress: <strong id="progressText">0/5</strong></p>
+        <p>Progress: <strong id="progressText">0/8</strong></p>
         <div class="progress-bar-small">
           <div id="progressFill" class="progress-fill-small" style="width:0%"></div>
         </div>
       </div>
     </aside>
 
-    <!-- Konten materi -->
     <main class="lesson-content">
       <div id="lessonContent">
         <p>Pilih materi di sebelah kiri untuk mulai belajar.</p>
