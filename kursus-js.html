@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kursus JavaScript - ZimzzCode</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">💻 Zimzz<span>Code</span></div>
+    <div class="nav-links">
+      <a href="dashboard.html" class="btn-login">← Dashboard</a>
+      <div class="mode-buttons">
+        <button type="button" class="mode-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+        <button type="button" class="mode-btn" id="focusBtn" onclick="toggleFocus()">⛶</button>
+      </div>
+      <span id="userName" class="user-name"></span>
+    </div>
+  </nav>
 
+  <div class="lesson-layout">
+    <aside class="lesson-sidebar">
+      <h3>⚡ Materi JavaScript</h3>
+      <ul id="lessonList"></ul>
+      <div class="progress-box">
+        <p>Progress: <strong id="progressText">0/3</strong></p>
+        <div class="progress-bar-small"><div id="progressFill" class="progress-fill-small" style="width:0%"></div></div>
+      </div>
+    </aside>
+    <main class="lesson-content"><div id="lessonContent"></div></main>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/kursus-js.js"></script>
+</body>
+</html>
