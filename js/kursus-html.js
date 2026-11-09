@@ -1,9 +1,9 @@
 // ============================================
-// KURSUS HTML INTERAKTIF - VERSI SIMPEL
+// KURSUS HTML INTERAKTIF - BEBAS BENTROK
 // ============================================
 const COURSE_ID = 'html-dasar';
 let currentLang = 'id';
-let sb = null;
+let supabaseDB = null; // <--- Nama diubah agar tidak bentrok
 let currentUser = null;
 let completedLessons = new Set();
 let currentLessonId = null;
@@ -19,15 +19,15 @@ const LESSONS = [
   { id: 'html-8', title: { id: '8. Semantic', en: '8. Semantic' }, content: { id: '<h2>Semantic HTML</h2><p>Gunakan &lt;header&gt;, &lt;main&gt;, &lt;footer&gt;.</p>', en: '<h2>Semantic HTML</h2><p>Use &lt;header&gt;, &lt;main&gt;, &lt;footer&gt;.</p>' }, starter: '<header>Header</header>' }
 ];
 
-// 1. TAMPILKAN MATERI LANGSUNG TANPA MENUNGGU SUPABASE
+// 1. TAMPILKAN MATERI LANGSUNG
 document.addEventListener('DOMContentLoaded', () => {
   renderLessonList();
   if (LESSONS.length > 0) openLesson(LESSONS[0].id);
   
-  // Coba hubungkan ke Supabase untuk cek login (opsional)
+  // Coba hubungkan ke Supabase
   setTimeout(() => {
     if (window.supabaseClient) {
-      sb = window.supabaseClient;
+      supabaseDB = window.supabaseClient;
       loadUser();
       loadProgress();
     }
@@ -111,9 +111,9 @@ function changeLanguage(lang) {
   if (currentLessonId) openLesson(currentLessonId);
 }
 
-// 2. FITUR LOGIN & PROGRESS (Berjalan di belakang layar)
+// 2. FITUR LOGIN & PROGRESS (Supabase)
 async function loadUser() {
-  const { data: { session } } = await sb.auth.getSession();
+  const { data: { session } } = await supabaseDB.auth.getSession();
   if (session) {
     currentUser = session.user;
     const name = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Siswa';
@@ -124,7 +124,7 @@ async function loadUser() {
 
 async function loadProgress() {
   if (!currentUser) return;
-  const { data, error } = await sb.from('user_progress').select('lesson_id').eq('course_id', COURSE_ID).eq('completed', true);
+  const { data, error } = await supabaseDB.from('user_progress').select('lesson_id').eq('course_id', COURSE_ID).eq('completed', true);
   if (!error && data) {
     completedLessons = new Set(data.map(d => d.lesson_id));
     renderLessonList();
@@ -132,13 +132,13 @@ async function loadProgress() {
 }
 
 async function markComplete(lessonId) {
-  if (!sb || !currentUser) { 
+  if (!supabaseDB || !currentUser) { 
     completedLessons.add(lessonId);
     renderLessonList();
     openLesson(lessonId);
     return; 
   }
-  const { error } = await sb.from('user_progress').upsert({
+  const { error } = await supabaseDB.from('user_progress').upsert({
     user_id: currentUser.id, course_id: COURSE_ID, lesson_id: lessonId, completed: true
   }, { onConflict: 'user_id,course_id,lesson_id' });
   
