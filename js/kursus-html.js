@@ -1,9 +1,9 @@
 // ============================================
-// KURSUS HTML INTERAKTIF - BEBAS BENTROK
+// KURSUS HTML INTERAKTIF - FIX TOMBOL SELESAI
 // ============================================
 const COURSE_ID = 'html-dasar';
 let currentLang = 'id';
-let supabaseDB = null; // <--- Nama diubah agar tidak bentrok
+let supabaseDB = null;
 let currentUser = null;
 let completedLessons = new Set();
 let currentLessonId = null;
@@ -24,15 +24,46 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLessonList();
   if (LESSONS.length > 0) openLesson(LESSONS[0].id);
   
-  // Coba hubungkan ke Supabase
+  // Tunggu Supabase siap
   setTimeout(() => {
     if (window.supabaseClient) {
       supabaseDB = window.supabaseClient;
-      loadUser();
-      loadProgress();
+      checkUserSession();
     }
   }, 1000);
 });
+
+async function checkUserSession() {
+  const { data: { session } } = await supabaseDB.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    const name = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Siswa';
+    const el = document.getElementById('userName');
+    if (el) el.textContent = `👤 ${name}`;
+    await loadProgress();
+  }
+}
+
+async function loadProgress() {
+  if (!currentUser) return;
+  const { data, error } = await supabaseDB.from('user_progress').select('lesson_id').eq('course_id', COURSE_ID).eq('completed', true);
+  if (!error && data) {
+    completedLessons = new Set(data.map(d => d.lesson_id));
+    renderLessonList();
+    updateProgressUI();
+    if (currentLessonId) openLesson(currentLessonId); // Refresh halaman
+  }
+}
+
+function updateProgressUI() {
+  const total = LESSONS.length;
+  const done = completedLessons.size;
+  const percent = Math.round((done / total) * 100);
+  const text = document.getElementById('progressText');
+  const fill = document.getElementById('progressFill');
+  if (text) text.textContent = `${done}/${total}`;
+  if (fill) fill.style.width = percent + '%';
+}
 
 function renderLessonList() {
   const list = document.getElementById('lessonList');
@@ -111,41 +142,29 @@ function changeLanguage(lang) {
   if (currentLessonId) openLesson(currentLessonId);
 }
 
-// 2. FITUR LOGIN & PROGRESS (Supabase)
-async function loadUser() {
-  const { data: { session } } = await supabaseDB.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    const name = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Siswa';
-    const el = document.getElementById('userName');
-    if (el) el.textContent = `👤 ${name}`;
-  }
-}
-
-async function loadProgress() {
-  if (!currentUser) return;
-  const { data, error } = await supabaseDB.from('user_progress').select('lesson_id').eq('course_id', COURSE_ID).eq('completed', true);
-  if (!error && data) {
-    completedLessons = new Set(data.map(d => d.lesson_id));
-    renderLessonList();
-  }
-}
-
+// ============================================
+// FUNGSI TOMBOL TANDAI SELESAI (FIX)
+// ============================================
 async function markComplete(lessonId) {
-  if (!supabaseDB || !currentUser) { 
-    completedLessons.add(lessonId);
-    renderLessonList();
-    openLesson(lessonId);
+  // 1. Ubah tampilan UI secara instan (Optimistic Update)
+  completedLessons.add(lessonId);
+  updateProgressUI();
+  renderLessonList();
+  openLesson(lessonId);
+
+  // 2. Coba simpan ke database
+  if (!supabaseDB || !currentUser) {
+    console.warn("Progress disimpan sementara (Lokal). Silakan login untuk menyimpan permanen.");
     return; 
   }
+
   const { error } = await supabaseDB.from('user_progress').upsert({
     user_id: currentUser.id, course_id: COURSE_ID, lesson_id: lessonId, completed: true
   }, { onConflict: 'user_id,course_id,lesson_id' });
   
-  if (!error) {
-    completedLessons.add(lessonId);
-    renderLessonList();
-    openLesson(lessonId);
+  if (error) {
+    console.error("Gagal simpan ke database:", error.message);
+    alert("Materi ditandai selesai, tapi gagal simpan ke server. Pastikan kamu sudah login.");
   }
 }
 
