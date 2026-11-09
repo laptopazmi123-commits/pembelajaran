@@ -4,52 +4,110 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kursus HTML - ZimzzCode</title>
-  <link rel="stylesheet" href="css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ================= CSS DISATUKAN DI SINI ================= */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    :root { --primary: #6C63FF; --dark: #1a1a2e; --light: #f5f5f7; --gray: #888; --success: #2ecc71; }
+    body { background: #fff; color: var(--dark); line-height: 1.6; }
+    
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 60px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+    .logo { font-size: 1.5rem; font-weight: 700; }
+    .logo span { color: var(--primary); }
+    .btn-login { padding: 10px 20px; border-radius: 8px; border: 2px solid var(--primary); color: var(--primary); text-decoration: none; font-weight: 600; }
+    
+    .lesson-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+    .lesson-sidebar { background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); height: fit-content; }
+    .lesson-sidebar h3 { margin-bottom: 15px; }
+    
+    #lessonList { list-style: none; }
+    .lesson-item { padding: 12px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; display: flex; gap: 8px; font-size: 0.9rem; background: var(--light); }
+    .lesson-item.active { background: var(--primary); color: #fff; }
+    
+    .lesson-content { background: #fff; border-radius: 15px; padding: 35px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+    .lesson-text { line-height: 1.8; margin-bottom: 25px; }
+    .lesson-text pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 10px; overflow-x: auto; margin: 15px 0; }
+    
+    .playground { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+    .code-input { width: 100%; height: 250px; padding: 15px; border-radius: 10px; font-family: monospace; background: #2d2d2d; color: #fff; resize: vertical; }
+    .preview-frame { width: 100%; height: 250px; border: 2px solid #e0e0e0; border-radius: 10px; background: #fff; }
+    
+    .btn-success { background: var(--success); color: #fff; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-sm { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: var(--primary); color: #fff; margin-right: 5px; }
+    
+    @media (max-width: 900px) { .lesson-layout, .playground { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
   <nav class="navbar">
     <div class="logo">💻 Zimzz<span>Code</span></div>
     <div class="nav-links">
       <a href="dashboard.html" class="btn-login">← Dashboard</a>
-      <div class="mode-buttons">
-        <button type="button" class="mode-btn" id="themeBtn" onclick="toggleTheme()" title="Mode Gelap/Terang">🌙</button>
-        <button type="button" class="mode-btn" id="focusBtn" onclick="toggleFocus()" title="Mode Fokus">⛶</button>
-      </div>
-      <span id="userName" class="user-name"></span>
     </div>
   </nav>
 
   <div class="lesson-layout">
     <aside class="lesson-sidebar">
-      <div class="sidebar-header">
-        <h3>📚 Materi HTML</h3>
-        <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
-          <option value="id">🇮🇩 Indonesia</option>
-          <option value="en">🇬🇧 English</option>
-          <option value="ja">🇯🇵 日本語</option>
-          <option value="zh">🇨🇳 中文</option>
-          <option value="ko">🇰🇷 한국어</option>
-        </select>
-      </div>
+      <h3>📚 Materi HTML</h3>
       <ul id="lessonList"></ul>
-      <div class="progress-box">
-        <p>Progress: <strong id="progressText">0/8</strong></p>
-        <div class="progress-bar-small">
-          <div id="progressFill" class="progress-fill-small" style="width:0%"></div>
-        </div>
-      </div>
     </aside>
-
     <main class="lesson-content">
-      <div id="lessonContent">
-        <p>Pilih materi di sebelah kiri untuk mulai belajar.</p>
-      </div>
+      <div id="lessonContent"></div>
     </main>
   </div>
 
-  <script src="js/supabase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/kursus-html.js"></script>
+  <script>
+    // ================= JS DISATUKAN DI SINI =================
+    const LESSONS = [
+      { id: 'html-1', title: '1. Pengenalan HTML', content: '<h2>Apa itu HTML?</h2><p>HTML adalah bahasa markup untuk membuat web.</p>', starter: '<h1>Halo Dunia</h1>' },
+      { id: 'html-2', title: '2. Heading & Paragraf', content: '<h2>Heading & Paragraf</h2><p>Gunakan &lt;h1&gt; sampai &lt;h6&gt; untuk judul, dan &lt;p&gt; untuk paragraf.</p>', starter: '<h1>Judul</h1>\n<p>Paragraf</p>' },
+      { id: 'html-3', title: '3. Link & Gambar', content: '<h2>Link & Gambar</h2><p>Gunakan &lt;a&gt; untuk link dan &lt;img&gt; untuk gambar.</p>', starter: '<a href="#">Link</a>' },
+      { id: 'html-4', title: '4. List', content: '<h2>List</h2><p>Gunakan &lt;ul&gt; untuk list biasa, atau &lt;ol&gt; untuk list berurutan.</p>', starter: '<ul><li>Item</li></ul>' },
+      { id: 'html-5', title: '5. Form', content: '<h2>Form</h2><p>Gunakan &lt;input&gt; untuk memasukkan data.</p>', starter: '<input type="text" placeholder="Ketik...">' },
+      { id: 'html-6', title: '6. Div & Span', content: '<h2>Div & Span</h2><p>Div untuk block, Span untuk inline.</p>', starter: '<div style="background:yellow;">Block</div>' },
+      { id: 'html-7', title: '7. Tabel', content: '<h2>Tabel</h2><p>Gunakan &lt;table&gt; untuk membuat tabel.</p>', starter: '<table border="1"><tr><td>Data</td></tr></table>' },
+      { id: 'html-8', title: '8. Semantic', content: '<h2>Semantic HTML</h2><p>Gunakan &lt;header&gt;, &lt;main&gt;, &lt;footer&gt; untuk struktur.</p>', starter: '<header style="background:#ccc">Header</header>' }
+    ];
+
+    // Langsung render daftar materi tanpa nunggu apa-apa
+    const list = document.getElementById('lessonList');
+    list.innerHTML = LESSONS.map(l => `<li class="lesson-item" onclick="openLesson('${l.id}')" id="item-${l.id}">${l.title}</li>`).join('');
+
+    function openLesson(id) {
+      const lesson = LESSONS.find(l => l.id === id);
+      
+      // Highlight sidebar
+      document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('item-' + id).classList.add('active');
+
+      // Render konten
+      const container = document.getElementById('lessonContent');
+      container.innerHTML = `
+        <h1>${lesson.title}</h1>
+        <div class="lesson-text">${lesson.content}</div>
+        <hr><br>
+        <h3>🔧 Coba Sendiri</h3>
+        <div class="playground">
+          <textarea id="codeInput" class="code-input" oninput="runPreview()">${lesson.starter}</textarea>
+          <iframe id="previewFrame" class="preview-frame"></iframe>
+        </div>
+        <button class="btn-success">✓ Tandai Selesai</button>
+      `;
+      runPreview();
+    }
+
+    function runPreview() {
+      const code = document.getElementById('codeInput')?.value || '';
+      const frame = document.getElementById('previewFrame');
+      if (!frame) return;
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open();
+      doc.write(\`<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:15px;}</style></head><body>\${code}</body></html>\`);
+      doc.close();
+    }
+
+    // Buka materi pertama saat halaman dimuat
+    openLesson(LESSONS[0].id);
+  </script>
 </body>
 </html>
