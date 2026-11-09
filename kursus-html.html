@@ -21,7 +21,8 @@
     .lesson-sidebar h3 { margin-bottom: 15px; }
     
     #lessonList { list-style: none; }
-    .lesson-item { padding: 12px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; display: flex; gap: 8px; font-size: 0.9rem; background: var(--light); }
+    .lesson-item { padding: 12px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; display: flex; gap: 8px; font-size: 0.9rem; background: var(--light); transition: 0.2s; }
+    .lesson-item:hover { background: #e0e0e0; }
     .lesson-item.active { background: var(--primary); color: #fff; }
     
     .lesson-content { background: #fff; border-radius: 15px; padding: 35px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
@@ -33,7 +34,6 @@
     .preview-frame { width: 100%; height: 250px; border: 2px solid #e0e0e0; border-radius: 10px; background: #fff; }
     
     .btn-success { background: var(--success); color: #fff; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
-    .btn-sm { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: var(--primary); color: #fff; margin-right: 5px; }
     
     @media (max-width: 900px) { .lesson-layout, .playground { grid-template-columns: 1fr; } }
   </style>
@@ -52,7 +52,9 @@
       <ul id="lessonList"></ul>
     </aside>
     <main class="lesson-content">
-      <div id="lessonContent"></div>
+      <div id="lessonContent">
+        <p>Pilih materi di sebelah kiri untuk mulai belajar.</p>
+      </div>
     </main>
   </div>
 
@@ -69,7 +71,7 @@
       { id: 'html-8', title: '8. Semantic', content: '<h2>Semantic HTML</h2><p>Gunakan &lt;header&gt;, &lt;main&gt;, &lt;footer&gt; untuk struktur.</p>', starter: '<header style="background:#ccc">Header</header>' }
     ];
 
-    // Langsung render daftar materi tanpa nunggu apa-apa
+    // Render daftar materi langsung saat halaman dimuat
     const list = document.getElementById('lessonList');
     list.innerHTML = LESSONS.map(l => `<li class="lesson-item" onclick="openLesson('${l.id}')" id="item-${l.id}">${l.title}</li>`).join('');
 
@@ -80,7 +82,7 @@
       document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
       document.getElementById('item-' + id).classList.add('active');
 
-      // Render konten
+      // Render konten materi & editor
       const container = document.getElementById('lessonContent');
       container.innerHTML = `
         <h1>${lesson.title}</h1>
@@ -102,11 +104,11 @@
       if (!frame) return;
       const doc = frame.contentDocument || frame.contentWindow.document;
       doc.open();
-      doc.write(\`<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:15px;}</style></head><body>\${code}</body></html>\`);
+      doc.write(`<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:15px;}</style></head><body>${code}</body></html>`);
       doc.close();
     }
 
-    // Buka materi pertama saat halaman dimuat
+    // Otomatis buka materi pertama saat halaman dimuat
     openLesson(LESSONS[0].id);
   </script>
 </body>
