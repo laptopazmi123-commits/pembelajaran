@@ -38,6 +38,7 @@ const QUIZZES = {
   'html-8': [{ q: 'Navigasi?', options: ['<menu>', '<nav>', '<navigate>', '<link>'], answer: 1 }]
 };
 
+// --- INISIALISASI ---
 window.addEventListener('supabase-ready', async () => {
   sb = window.supabaseClient;
   await initCourse();
@@ -53,7 +54,7 @@ async function initCourse() {
   await loadUser();
   await loadProgress();
   renderLessonList();
-  openLesson(LESSONS[0].id);
+  if (LESSONS.length > 0) openLesson(LESSONS[0].id);
 }
 
 async function loadUser() {
@@ -109,6 +110,8 @@ function openLesson(lessonId) {
 
   const isCompleted = completedLessons.has(lessonId);
   const container = document.getElementById('lessonContent');
+  if (!container) return;
+  
   container.innerHTML = `
     <div class="lesson-header">
       <h1>${getText(lesson.title)}</h1>
@@ -164,14 +167,16 @@ async function markComplete(lessonId) {
   const { error } = await sb.from('user_progress').upsert({
     user_id: currentUser.id, course_id: COURSE_ID, lesson_id: lessonId, completed: true
   }, { onConflict: 'user_id,course_id,lesson_id' });
-  if (error) return alert('Gagal simpan: ' + error.message);
+  
+  if (error) { alert('Gagal simpan: ' + error.message); return; }
+  
   completedLessons.add(lessonId);
   updateProgressUI();
   renderLessonList();
   openLesson(lessonId);
 }
 
-// MODE FUNCTIONS
+// --- MODE FUNCTIONS ---
 function toggleTheme() {
   document.body.classList.toggle('dark-mode');
   const isDark = document.body.classList.contains('dark-mode');
@@ -192,6 +197,7 @@ function toggleFocus() {
   const isFocus = document.body.classList.contains('focus-mode');
   const oldBtn = document.getElementById('focusExitBtn');
   if (oldBtn) oldBtn.remove();
+  
   if (isFocus) {
     const exitBtn = document.createElement('button');
     exitBtn.id = 'focusExitBtn';
@@ -205,7 +211,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) toggleFocus();
 });
 
-// QUIZ FUNCTIONS
+// --- QUIZ FUNCTIONS ---
 function renderQuiz(lessonId) {
   const quiz = QUIZZES[lessonId];
   if (!quiz) return '';
@@ -244,12 +250,14 @@ function initQuiz(lessonId) {
     const questionEl = container.querySelector(`[data-q="${qi}"]`);
     if (questionEl.dataset.answered) return;
     questionEl.dataset.answered = '1';
+    
     const options = questionEl.querySelectorAll('.quiz-option');
     options.forEach((btn, i) => {
       if (i === q.answer) btn.classList.add('correct');
       else if (i === oi) btn.classList.add('wrong');
       btn.disabled = true;
     });
+    
     answered++;
     if (oi === q.answer) {
       correct++;
@@ -259,6 +267,7 @@ function initQuiz(lessonId) {
       feedback.textContent = `❌ Salah. Jawaban benar: ${q.options[q.answer]}`;
       feedback.className = 'quiz-feedback show wrong';
     }
+    
     if (scoreEl) scoreEl.textContent = `${correct}/${quiz.length}`;
     if (answered === quiz.length) {
       setTimeout(() => {
@@ -269,6 +278,7 @@ function initQuiz(lessonId) {
   };
 }
 
+// Expose ke global window agar bisa dipanggil dari HTML
 window.openLesson = openLesson;
 window.runPreview = runPreview;
 window.resetCode = resetCode;
